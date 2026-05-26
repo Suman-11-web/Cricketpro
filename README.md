@@ -63,7 +63,7 @@ To control the live match and manage the tournament, navigate to the Admin Panel
 URL: /login
 Default Password: (contact author)
 
-#deployed in vercel 
+# deployed in vercel 
 https://cricketpro-ruddy.vercel.app/
 main 🙄 website hosted link plz visit here
 
