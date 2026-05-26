@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+jinja2
+python-multipart
+a2wsgi
+pydantic
