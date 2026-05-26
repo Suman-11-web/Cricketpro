@@ -18,7 +18,7 @@ from app import app as application
 
 
 
-#explenation
+# explenation
 # 🏏 Cricket-16 Live Scoring Dashboard
 
 A real-time, ultra-fast cricket scoring and tournament management dashboard. Built to track live matches, maintain points tables, and broadcast ball-by-ball updates instantly to all connected viewers.
