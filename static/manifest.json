@@ -1,0 +1,16 @@
+{
+  "name": "Hadinaru Cricket League",
+  "short_name": "HCL Live",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/5113/5113709.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
