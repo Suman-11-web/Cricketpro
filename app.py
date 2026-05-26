@@ -1,22 +1,39 @@
+import os
+import copy
+from datetime import datetime
 from fastapi import FastAPI, Form, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
-import copy
-import json
-import os
-from datetime import datetime
+
+# --- 🚀 NEW: IMPORT PYMONGO ---
+from pymongo import MongoClient
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# --- 💾 DATABASE SETUP ---
-DB_FILE = "cricket_db.json"
+# --- 📁 VERCEL PATH SETUP ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
+# --- ☁️ MONGODB CLOUD SETUP ---
+# Vercel will securely inject your MongoDB URI here. 
+MONGO_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+client = MongoClient(MONGO_URI)
+
+# Connect to database named 'cricket_db' and a collection named 'match_data'
+mongo_db = client["cricket_db"]
+collection = mongo_db["match_data"]
+
+# --- 💾 MONGODB DATABASE SETUP ---
 def load_db():
-    if not os.path.exists(DB_FILE):
+    # Look for our single master document inside MongoDB
+    data = collection.find_one({"_id": "main_data"})
+    
+    if not data:
+        # If the database is totally empty, create the default layout and push it to Mongo
         default_data = {
+            "_id": "main_data", 
             "teams": [], "matches": [], "points": [], "completed_matches": [],
             "live": {
                 "title": "LIVE MATCH", "toss": "Toss: Waiting...", "venue": "Hadinaru Ground",
@@ -27,33 +44,34 @@ def load_db():
             },
             "history": []
         }
-        with open(DB_FILE, "w") as f:
-            json.dump(default_data, f)
+        collection.insert_one(default_data)
         return default_data
-    with open(DB_FILE, "r") as f:
-        data = json.load(f)
-        if type(data["teams"]) == list and (len(data["teams"]) == 0 or type(data["teams"][0]) == str):
-            new_teams = [{"name": t, "color": "#A3E635"} for t in data["teams"]]
-            data["teams"] = new_teams
-        if "batting_color" not in data["live"]:
-            data["live"]["batting_color"] = "#A3E635"
-        if "prev_runs" not in data["live"]:
-            data["live"]["prev_runs"] = 0
-            data["live"]["prev_wickets"] = 0
-            data["live"]["prev_overs"] = "0.0"
-        if "total_overs" not in data["live"]:
-            data["live"]["total_overs"] = 20
-        if "completed_matches" not in data:
-            data["completed_matches"] = []
-        return data
+
+    # Safety checks for existing data
+    if type(data["teams"]) == list and (len(data["teams"]) == 0 or type(data["teams"][0]) == str):
+        new_teams = [{"name": t, "color": "#A3E635"} for t in data["teams"]]
+        data["teams"] = new_teams
+    if "batting_color" not in data["live"]:
+        data["live"]["batting_color"] = "#A3E635"
+    if "prev_runs" not in data["live"]:
+        data["live"]["prev_runs"] = 0
+        data["live"]["prev_wickets"] = 0
+        data["live"]["prev_overs"] = "0.0"
+    if "total_overs" not in data["live"]:
+        data["live"]["total_overs"] = 20
+    if "completed_matches" not in data:
+        data["completed_matches"] = []
+    
+    return data
 
 def save_db():
-    with open(DB_FILE, "w") as f:
-        json.dump(db, f)
+    # Instantly replace the document in MongoDB with our current 'db' variable
+    collection.replace_one({"_id": "main_data"}, db, upsert=True)
 
+# Load data when app starts
 db = load_db()
 
-# --- ⚡ WEBSOCKETS ---
+# --- ⚡ WEBSOCKETS (VERCEL WARNING) ---
 active_connections = []
 
 @app.websocket("/ws")
@@ -73,7 +91,8 @@ async def broadcast_update():
 
 # --- 🔒 SECURITY ROUTES ---
 @app.get("/login")
-def serve_login(): return FileResponse("templates/login.html")
+def serve_login(): 
+    return FileResponse(os.path.join(BASE_DIR, "templates", "login.html"))
 
 @app.post("/api/login")
 def login_attempt(password: str = Form(...)):
@@ -91,13 +110,14 @@ def logout():
 
 # --- PAGE ROUTES ---
 @app.get("/")
-def serve_index(): return FileResponse("templates/index.html")
+def serve_index(): 
+    return FileResponse(os.path.join(BASE_DIR, "templates", "index.html"))
 
 @app.get("/admin")
 def serve_admin(request: Request):
     if request.cookies.get("hcl_admin_token") != "unlocked":
         return RedirectResponse(url="/login", status_code=303)
-    return FileResponse("templates/admin.html")
+    return FileResponse(os.path.join(BASE_DIR, "templates", "admin.html"))
 
 # --- GET DATA ROUTES ---
 @app.get("/api/match-data")
@@ -284,7 +304,6 @@ async def reset_points():
     await broadcast_update()
     return RedirectResponse(url="/admin", status_code=303)
 
-# --- NEW: DELETE HISTORY ROUTE ---
 @app.post("/api/delete-history")
 async def delete_history(match_index: int = Form(...)):
     if 0 <= match_index < len(db["completed_matches"]):
@@ -326,4 +345,4 @@ def add_match(team_a: str = Form(...), team_b: str = Form(...), date: str = Form
     return RedirectResponse(url="/admin", status_code=303)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
