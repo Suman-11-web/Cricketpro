@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HCL - Pro Control Center</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Standalone Old UI Styles - Immune to Cache Issues! */
+        :root { --neon-green: #A3E635; --text-muted: #9CA3AF; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        html { zoom: 1 !important; touch-action: manipulation; }
+        body { padding: 20px; max-width: 1000px; margin: 0 auto; background-color: #05070A; color: white; padding-bottom: 50px; }
+        
+        .admin-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+        .admin-header i { font-size: 1.5rem; }
+        .admin-header h1 { font-size: 1.5rem; margin: 0; }
+        .admin-header p { color: var(--text-muted); font-size: 0.85rem; margin: 0; }
+        
+        .pro-card { background: #0B0E14; border: 1px solid #1F2937; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .pro-card h3 { margin-top: 0; font-size: 1.1rem; margin-bottom: 15px; }
+        
+        .control-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .btn-tap { background: #1F2937; color: white; font-size: 1.3rem; font-weight: bold; padding: 15px 0; border: 1px solid #374151; border-radius: 8px; cursor: pointer; }
+        .btn-tap:active { background: var(--neon-green); color: black; border-color: var(--neon-green); }
+        
+        .btn-undo { background: rgba(234, 179, 8, 0.1); color: #EAB308; border: 1px solid #EAB308; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
+        .btn-danger { background: rgba(239, 68, 68, 0.2); color: #EF4444; border: 1px solid #EF4444; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; display: block; text-align: center; }
+        .btn-save { background: var(--neon-green); color: #000; font-weight: bold; padding: 12px; border: none; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 5px; }
+        
+        .admin-input { background: #1F2937; border: 1px solid #374151; color: white; padding: 12px; border-radius: 8px; width: 100%; outline: none; margin-bottom: 10px; }
+        
+        .team-list-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1F2937; padding-bottom: 10px; margin-bottom: 10px; }
+        .btn-icon-delete { background: none; border: none; color: #EF4444; cursor: pointer; font-size: 1rem; padding: 5px; }
+    </style>
+</head>
+<body onload="loadAdminData()">
+
+    <div class="admin-header">
+        <i class="fa-solid fa-tower-broadcast"></i>
+        <div>
+            <h1>Control Center</h1>
+            <p>Live Broadcast Manager</p>
+        </div>
+    </div>
+
+    <!-- Live Scoring Pad -->
+    <div class="pro-card" style="border-color: var(--neon-green);">
+        <h3><i class="fa-solid fa-gamepad"></i> Live Scoring Pad</h3>
+        
+        <div style="display: flex; justify-content: space-between; background: #1F2937; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+            <div><span style="color: var(--text-muted); font-size: 0.75rem;">BATTING</span><br><strong id="admin-batting-team" style="color: var(--neon-green);">Loading...</strong></div>
+            <div style="text-align: right;"><span style="color: var(--text-muted); font-size: 0.75rem;">SCORE</span><br><strong id="admin-status" style="color: white;">0/0 (0.0)</strong></div>
+        </div>
+        
+        <div class="control-grid">
+            <button class="btn-tap" onclick="sendAction(0, 1, 0, '0')">0</button>
+            <button class="btn-tap" onclick="sendAction(1, 1, 0, '1')">1</button>
+            <button class="btn-tap" onclick="sendAction(2, 1, 0, '2')">2</button>
+            <button class="btn-tap" onclick="sendAction(3, 1, 0, '3')">3</button>
+            <button class="btn-tap" onclick="sendAction(4, 1, 0, '4')">4</button>
+            <button class="btn-tap" onclick="sendAction(6, 1, 0, '6')">6</button>
+            <button class="btn-tap" style="background:#b45309; border-color:#b45309;" onclick="sendAction(1, 0, 0, 'WD')">WD</button>
+            <button class="btn-tap" style="background:#b45309; border-color:#b45309;" onclick="sendAction(1, 0, 0, 'NB')">NB</button>
+        </div>
+        
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn-undo" onclick="undoAction()"><i class="fa-solid fa-rotate-left"></i> UNDO</button>
+            <button class="btn-danger" onclick="sendAction(0, 1, 1, 'W')">OUT (Wicket)</button>
+        </div>
+        
+        <div style="margin-top: 20px; border-top: 1px solid #374151; padding-top: 15px;">
+            <form action="/api/end-innings" method="POST" onsubmit="return confirm('Are you sure you want to end this innings?');">
+                <button type="submit" style="width: 100%; background: #3B82F6; color: white; padding: 12px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; margin-bottom: 12px;">
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i> Swap Innings (Auto Target)
+                </button>
+            </form>
+            
+            <form action="/api/end-match" method="POST" onsubmit="return confirm('End Match and calculate points?');">
+                <div style="display: flex; gap: 10px;">
+                    <select name="winner" id="end-winner" class="admin-input" required style="margin-bottom:0;"></select>
+                    <button type="submit" class="btn-save" style="background: #10B981; color: white; margin-top:0; white-space: nowrap;"><i class="fa-solid fa-trophy"></i> End Match</button>
+                </div>
+            </form>
+
+            <form action="/api/reset-live-match" method="POST" onsubmit="return confirm('⚠️ Delete current live score?');" style="margin-top: 15px;">
+                <button type="submit" class="btn-danger"><i class="fa-solid fa-trash-can"></i> Delete Live Match</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Match Setup -->
+    <div class="pro-card">
+        <h3><i class="fa-solid fa-sliders"></i> New Match Setup</h3>
+        <form action="/api/setup-match" method="POST">
+            <div style="background: #1F2937; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <select name="team_a" id="setup-team-a" class="admin-input" required></select>
+                <div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; margin: 5px 0;">VS</div>
+                <select name="team_b" id="setup-team-b" class="admin-input" style="margin-bottom:0;" required></select>
+            </div>
+            
+            <div style="background: rgba(163, 230, 53, 0.05); border: 1px solid var(--neon-green); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <label style="color: var(--neon-green); font-size: 0.85rem; display:block; margin-bottom:5px;">Batting First:</label>
+                <select name="batting_team" id="setup-batting" class="admin-input" required></select>
+                
+                <label style="color: var(--neon-green); font-size: 0.85rem; display:block; margin-top:10px; margin-bottom:5px;">Total Overs:</label>
+                <input type="number" name="total_overs" id="setup-overs" value="20" class="admin-input" style="margin-bottom:0;" required>
+            </div>
+            
+            <input type="hidden" name="target" value="0">
+            <button type="submit" class="btn-save"><i class="fa-solid fa-play"></i> Start New Match</button>
+        </form>
+    </div>
+
+    <!-- Match Info & Toss -->
+    <div class="pro-card">
+        <h3><i class="fa-solid fa-info-circle"></i> Match Info & Toss</h3>
+        <form action="/api/update-info" method="POST">
+            <input type="text" name="title" id="setup-title" placeholder="e.g., FINAL MATCH" class="admin-input" required>
+            <input type="text" name="toss" id="setup-toss" placeholder="e.g., Warriors won toss & elected to bat" class="admin-input" required>
+            <input type="text" name="venue" id="setup-venue" placeholder="e.g., Hadinaru Ground" class="admin-input" required>
+            <button type="submit" class="btn-save" style="background: #3B82F6; color: white;"><i class="fa-solid fa-upload"></i> Update Info</button>
+        </form>
+    </div>
+
+    <!-- Team Management -->
+    <div class="pro-card">
+        <h3><i class="fa-solid fa-users-gear"></i> Team Management</h3>
+        <form action="/api/add-team" method="POST" style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="color" name="team_color" value="#A3E635" style="width: 45px; height: 45px; border: none; background: transparent; cursor: pointer;">
+            <input type="text" name="new_team" placeholder="New Team Name" class="admin-input" style="margin-bottom:0; flex-grow: 1;" required>
+            <button type="submit" class="btn-save" style="width: auto; margin-top:0; padding: 0 20px;"><i class="fa-solid fa-plus"></i></button>
+        </form>
+        
+        <div style="background: #1F2937; padding: 15px; border-radius: 8px; max-height: 200px; overflow-y: auto;" id="admin-team-list"></div>
+        
+        <form action="/api/reset-points" method="POST" onsubmit="return confirm('⚠️ Reset ALL points to zero?');" style="margin-top: 15px;">
+            <button type="submit" class="btn-undo"><i class="fa-solid fa-rotate-right"></i> Reset Points Table</button>
+        </form>
+    </div>
+
+    <!-- Match History Manager -->
+    <div class="pro-card">
+        <h3><i class="fa-solid fa-clock-rotate-left"></i> Match History</h3>
+        <div style="background: #1F2937; padding: 15px; border-radius: 8px; max-height: 250px; overflow-y: auto;" id="admin-history-list"></div>
+    </div>
+
+    <!-- Schedule Match -->
+    <div class="pro-card">
+        <h3><i class="fa-solid fa-calendar-plus"></i> Schedule Match</h3>
+        <form action="/api/add-match" method="POST">
+            <select name="team_a" id="sched-team-a" class="admin-input" required></select>
+            <select name="team_b" id="sched-team-b" class="admin-input" required></select>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" name="date" placeholder="Date" class="admin-input" required>
+                <input type="text" name="time" placeholder="Time" class="admin-input" required>
+            </div>
+            <button type="submit" class="btn-save"><i class="fa-solid fa-calendar-check"></i> Schedule</button>
+        </form>
+    </div>
+
+    <script>
+        async function loadAdminData() {
+            const resTeams = await fetch('/api/teams');
+            const teams = await resTeams.json();
+            let optionsHTML = '<option value="">-- Select Team --</option>';
+            let listHTML = '';
+            
+            teams.forEach(t => {
+                optionsHTML += `<option value="${t.name}">${t.name}</option>`;
+                listHTML += `<div class="team-list-item">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="width:15px; height:15px; border-radius:50%; background:${t.color};"></span>
+                        <span style="font-weight: bold; color: #F3F4F6;">${t.name}</span>
+                    </div>
+                    <button class="btn-icon-delete" onclick="deleteTeam('${t.name}')"><i class="fa-solid fa-trash"></i></button>
+                </div>`;
+            });
+
+            document.getElementById('admin-team-list').innerHTML = listHTML;
+            document.getElementById('setup-team-a').innerHTML = optionsHTML;
+            document.getElementById('setup-team-b').innerHTML = optionsHTML;
+            document.getElementById('setup-batting').innerHTML = optionsHTML;
+            document.getElementById('sched-team-a').innerHTML = optionsHTML;
+            document.getElementById('sched-team-b').innerHTML = optionsHTML;
+            document.getElementById('end-winner').innerHTML = optionsHTML;
+
+            const resMatch = await fetch('/api/match-data');
+            const data = await resMatch.json();
+            document.getElementById('admin-batting-team').innerText = data.batting_team;
+            document.getElementById('admin-batting-team').style.color = data.batting_color;
+            document.getElementById('admin-status').innerText = `${data.runs}/${data.wickets} (${data.overs})`;
+            
+            document.getElementById('setup-title').value = data.title;
+            document.getElementById('setup-toss').value = data.toss;
+            document.getElementById('setup-venue').value = data.venue;
+            if(data.total_overs) document.getElementById('setup-overs').value = data.total_overs;
+
+            const resHistory = await fetch('/api/completed-matches');
+            const historyData = await resHistory.json();
+            let historyHTML = historyData.length === 0 ? '<p style="color:var(--text-muted); font-size:0.8rem; text-align:center;">No match history yet.</p>' : '';
+            
+            historyData.forEach((m, index) => {
+                historyHTML += `<div class="team-list-item" style="flex-direction: column; align-items: flex-start; gap: 5px;">
+                    <div style="display:flex; justify-content:space-between; width:100%;">
+                        <span style="font-size:0.75rem; color:var(--text-muted);"><i class="fa-regular fa-calendar"></i> ${m.date}</span>
+                        <button class="btn-icon-delete" onclick="deleteHistory(${index})" title="Delete Record"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                    <div style="font-weight:bold; font-size:0.85rem; color:#F3F4F6;">${m.team_a} vs ${m.team_b}</div>
+                    <div style="font-size:0.75rem; color:var(--neon-green);">${m.result}</div>
+                </div>`;
+            });
+            document.getElementById('admin-history-list').innerHTML = historyHTML;
+        }
+
+        async function sendAction(runs, balls, wickets, extras) {
+            if(navigator.vibrate) {
+                if(wickets > 0) navigator.vibrate([100, 50, 100]); 
+                else if(runs === 6 || runs === 4) navigator.vibrate(80); 
+                else navigator.vibrate(30); 
+            }
+            const res = await fetch('/api/quick-action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ runs: runs, balls: balls, wickets: wickets, extras: extras }) });
+            const data = await res.json();
+            document.getElementById('admin-status').innerText = `${data.new_score.runs}/${data.new_score.wickets} (${data.new_score.overs})`;
+        }
+
+        async function undoAction() {
+            if(navigator.vibrate) navigator.vibrate(20);
+            const res = await fetch('/api/undo', { method: 'POST' });
+            const data = await res.json();
+            if(data.status === "success") document.getElementById('admin-status').innerText = `${data.new_score.runs}/${data.new_score.wickets} (${data.new_score.overs})`;
+        }
+
+        async function deleteTeam(teamName) {
+            if(confirm(`Delete "${teamName}"?`)) {
+                const formData = new FormData(); formData.append('team_name', teamName);
+                await fetch('/api/delete-team', { method: 'POST', body: formData });
+                loadAdminData();
+            }
+        }
+
+        async function deleteHistory(index) {
+            if(confirm('Permanently delete this match from history?')) {
+                const formData = new FormData();
+                formData.append('match_index', index);
+                await fetch('/api/delete-history', { method: 'POST', body: formData });
+                loadAdminData();
+            }
+        }
+    </script>
+</body>
+</html>

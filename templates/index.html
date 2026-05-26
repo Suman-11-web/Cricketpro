@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hadinaru Cricket League</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+    <!-- Premium 3D Confetti Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+    <div id="action-anim" class="action-anim"></div>
+
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>HCL <span>MENU</span></h2>
+            <i class="fa-solid fa-xmark" id="close-menu-btn"></i>
+        </div>
+        <ul class="sidebar-links">
+            <li><a href="#" onclick="switchTab('home'); closeMenu();"><i class="fa-solid fa-house"></i> Home</a></li>
+            <li><a href="#" onclick="switchTab('schedule'); closeMenu();"><i class="fa-regular fa-calendar-days"></i> Fixtures</a></li>
+            <li><a href="#" onclick="switchTab('teams'); closeMenu();"><i class="fa-solid fa-shield-halved"></i> Teams</a></li>
+            <li><a href="#" onclick="switchTab('history'); closeMenu();"><i class="fa-solid fa-clock-rotate-left"></i> Match History</a></li>
+            <hr>
+            <li><a href="/admin"><i class="fa-solid fa-gear" style="color: #94A3B8;"></i> Admin Settings</a></li>
+            <li><a href="https://www.instagram.com/__suman._.007/" target="_blank"><i class="fa-brands fa-instagram" style="color: #E1306C;"></i> Contact Support</a></li>
+        </ul>
+    </div>
+
+    <header class="top-header">
+        <i class="fa-solid fa-bars" id="menu-btn" style="font-size: 1.6rem; color: var(--text-light); text-shadow: 0 2px 10px rgba(0,0,0,0.5); cursor: pointer;"></i>
+        <div class="logo"><h2>HADINARU <br><span>CRICKET LEAGUE</span></h2></div>
+        <a href="https://www.instagram.com/__suman._.007/" target="_blank" class="insta-btn" title="Follow me on Instagram">
+            <i class="fa-brands fa-instagram"></i>
+        </a>
+    </header>
+
+    <div id="tab-home" class="tab-content active-tab">
+        <section class="card live-card" id="shareable-card">
+            <div class="card-header">
+                <span class="live-badge" id="live-badge-ui"><span class="dot-blink"></span> LIVE</span>
+                <span class="match-title" id="match-title" style="color: var(--text-light);">LIVE MATCH</span>
+                <button onclick="shareScorecard()" style="background:transparent; border:none; color:var(--text-light); cursor:pointer; font-size:1.3rem; transition: 0.2s;" title="Share Score"><i class="fa-solid fa-share-nodes"></i></button>
+            </div>
+            
+            <div class="scoreboard">
+                <div class="team">
+                    <div class="team-logo" id="logo-a">T1</div>
+                    <p id="team-a-name" style="color:var(--text-muted); font-size: 0.95rem; font-weight:700; margin-bottom: 5px;">TEAM A</p>
+                    <div id="score-box-a" style="display: none;">
+                        <h1 id="score-a">0/0</h1>
+                        <p class="overs" id="overs-text-a"><span id="overs-a">0.0</span> OVERS</p>
+                    </div>
+                    <p id="status-a" style="font-size: 0.9rem; color: var(--text-muted); font-style: italic; margin-top: 15px; display: none;">Yet to bat</p>
+                </div>
+                
+                <div class="center-score">
+                    <div class="vs-badge">VS</div>
+                </div>
+                
+                <div class="team">
+                    <div class="team-logo" id="logo-b">T2</div>
+                    <p id="team-b-name" style="color:var(--text-muted); font-size: 0.95rem; font-weight:700; margin-bottom: 5px;">TEAM B</p>
+                    <div id="score-box-b" style="display: none;">
+                        <h1 id="score-b">0/0</h1>
+                        <p class="overs" id="overs-text-b"><span id="overs-b">0.0</span> OVERS</p>
+                    </div>
+                    <p id="status-b" style="font-size: 0.9rem; color: var(--text-muted); font-style: italic; margin-top: 15px; display: none;">Yet to bat</p>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-around; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 16px; margin-top: 25px; font-size: 1rem; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);">
+                <div style="color:var(--text-muted); font-weight:600;">CRR: <span id="crr" style="font-weight:900; color:white; font-size:1.1rem;">0.00</span></div>
+                <div style="color: var(--text-muted); font-weight:600;">Target: <span id="target" style="color: var(--neon-green); font-weight: 900; font-size:1.2rem; text-shadow: 0 0 10px rgba(163,230,53,0.3);">0</span></div>
+            </div>
+            
+            <div class="recent-overs">
+                <span style="color: var(--text-muted); font-size: 0.9rem; font-weight:800; text-transform:uppercase;">Recent</span>
+                <div id="ball-timeline" class="ball-timeline"></div>
+            </div>
+
+            <div id="equation-box" style="display: none;">
+                <p id="equation">...</p>
+            </div>
+
+            <div class="match-footer-horizontal">
+                <div class="footer-item"><i class="fa-solid fa-location-dot"></i><span id="venue">Hadinaru Ground</span></div>
+                <div class="footer-item"><i class="fa-solid fa-coins"></i><span id="toss">Toss: Waiting...</span></div>
+                <div class="footer-item"><i class="fa-regular fa-sun"></i><span id="weather">28°C Clear Sky</span></div>
+            </div>
+        </section>
+
+        <section class="card gs-reveal">
+            <div class="card-header">
+                <span>UPCOMING MATCH</span>
+                <span style="color: var(--neon-green); cursor: pointer;" onclick="switchTab('schedule')">View All <i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+            <div class="upcoming-details" id="upcoming-home-container"></div>
+        </section>
+    </div>
+
+    <div id="tab-schedule" class="tab-content">
+        <section class="card gs-reveal">
+            <div class="card-header"><span>ALL SCHEDULED MATCHES</span></div>
+            <div class="upcoming-details" id="upcoming-matches-container"></div>
+        </section>
+    </div>
+
+    <div id="tab-teams" class="tab-content">
+        <section class="card gs-reveal">
+            <div class="card-header"><span>REGISTERED TEAMS</span></div>
+            <table class="points-table"><tbody id="teams-tbody"></tbody></table>
+        </section>
+    </div>
+
+    <div id="tab-history" class="tab-content">
+        <section class="card gs-reveal">
+            <div class="card-header"><span>MATCH HISTORY</span></div>
+            <div id="history-container">
+                <p style="text-align:center; color: var(--text-muted); margin-top: 10px;">No completed matches yet.</p>
+            </div>
+        </section>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="#" id="nav-home" class="active" onclick="switchTab('home')"><i class="fa-solid fa-bolt"></i>LIVE</a>
+        <a href="#" id="nav-schedule" onclick="switchTab('schedule')"><i class="fa-regular fa-calendar-days"></i>FIXTURES</a>
+        <a href="#" id="nav-teams" onclick="switchTab('teams')"><i class="fa-solid fa-shield-halved"></i>TEAMS</a>
+        <a href="#" id="nav-history" onclick="switchTab('history')"><i class="fa-solid fa-clock-rotate-left"></i>HISTORY</a>
+    </nav>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

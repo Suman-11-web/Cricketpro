@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - HCL</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background-color: #05070A; 
+            padding: 20px;
+        }
+        .login-card {
+            background: #111827; 
+            border: 1px solid var(--neon-green); 
+            border-radius: 15px; 
+            padding: 30px 20px; 
+            width: 100%; 
+            max-width: 350px; 
+            text-align: center;
+            box-shadow: 0 0 20px rgba(163, 230, 53, 0.15);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <i class="fa-solid fa-lock" style="font-size: 3rem; color: var(--neon-green); margin-bottom: 20px;"></i>
+        <h2 style="color: white; margin-bottom: 5px;">Restricted Access</h2>
+        <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 0.85rem;">Enter password to unlock Control Center</p>
+        
+        <form action="/api/login" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+            <input type="password" name="password" placeholder="Enter Admin Password" class="admin-input" style="text-align: center; font-size: 1.1rem; letter-spacing: 2px;" required>
+            <button type="submit" class="btn-save"><i class="fa-solid fa-unlock"></i> Unlock Dashboard</button>
+        </form>
+
+        <script>
+            if(window.location.search.includes('error=1')) {
+                document.write('<p style="color: #EF4444; margin-top: 15px; font-weight: bold; animation: shake 0.5s;">Incorrect Password!</p>');
+            }
+        </script>
+    </div>
+
+</body>
+</html>
