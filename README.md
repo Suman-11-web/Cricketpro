@@ -64,6 +64,8 @@ URL: /login
 Default Password: (contact author)
 
 #deployed in vercel 
-link providing soon
+https://cricketpro-ruddy.vercel.app/
+main 🙄 website hosted link plz visit here
+
 
    
