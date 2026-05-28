@@ -64,8 +64,15 @@ URL: /login
 Default Password: (contact author)
 
 # deployed in vercel 
-https://cricketpro-ruddy.vercel.app/
+https://cricketpro-ruddy.vercel.app/.
+
 main 🙄 website hosted link plz visit here
 
+
+# Connect With Me
+
+Instagram: https://instagram.com/__suman._.007
+
+GitHub: https://github.com/Suman-11-web
 
    
