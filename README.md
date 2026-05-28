@@ -75,4 +75,16 @@ Instagram: https://instagram.com/__suman._.007
 
 GitHub: https://github.com/Suman-11-web
 
+
+
+# Screenshots
+
+## Homepage
+![Homepage](screenshots/homepage.png)
+
+## Menu Bar
+![Menubar](screenshots/menubar.png)
+
+## Scheduled Page
+![Scheduled](screenshots/SCHEDULED.png)
    
